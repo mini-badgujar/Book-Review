@@ -20,6 +20,7 @@ class Book extends Model
         return $query->where('title', 'LIKE', '%' . $title . '%');
     }
 
+
     public function scopeWithReviewsCount(Builder $query, $from = null, $to = null): Builder|QueryBuilder
     {
         return $query->withCount([
@@ -33,6 +34,7 @@ class Book extends Model
             'reviews' => fn(Builder $q) => $this->dateRangeFilter($q, $from, $to)
         ], 'rating');
     }
+
 
     public function scopePopular(Builder $query, $from = null, $to = null): Builder|QueryBuilder
     {
@@ -88,5 +90,11 @@ class Book extends Model
         return $query->highestRated(now()->subMonths(6), now())
             ->popular(now()->subMonths(6), now())
             ->minReviews(5);
+    }
+
+    protected static function booted()
+    {
+        static::updated(fn(Book $book) => cache()->forget('book:' . $book->book_id));
+        static::deleted(fn(Book $book) => cache()->forget('book:' . $book->book_id));
     }
 }
